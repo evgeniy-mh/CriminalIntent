@@ -36,7 +36,7 @@ public class DatePickerFragment extends DialogFragment{
         getTargetFragment().onActivityResult(getTargetRequestCode(),resultCode,intent);
     }
 
-    @Override
+    /*@Override
     public Dialog onCreateDialog(Bundle savedInstanceState){
 
         View v = LayoutInflater.from(getActivity()).inflate(R.layout.dialog_date,null);
@@ -64,15 +64,15 @@ public class DatePickerFragment extends DialogFragment{
                         sendResult(Activity.RESULT_OK, date);
                     }
                 }).create();
-    }
+    }*/
 
-    /*@Override
+    @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState){
         View v = LayoutInflater.from(getActivity()).inflate(R.layout.dialog_date,null);
 
 
         return v;
-    }*/
+    }
 
     public static DatePickerFragment newInstance(Date date){
         Bundle args=new Bundle();
