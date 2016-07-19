@@ -72,7 +72,15 @@
             android:layout_weight="1"
             android:text="@string/crime_report_text"/>
 
+        <Button
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/call_suspect"
+            android:text="@string/call_suspect"
+            android:layout_weight="0"/>
+
     </LinearLayout>
+
     
 
 

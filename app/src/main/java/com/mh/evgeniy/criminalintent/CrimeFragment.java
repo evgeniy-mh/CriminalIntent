@@ -7,6 +7,7 @@ import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.ContactsContract;
+import android.provider.ContactsContract.CommonDataKinds.Phone;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.ShareCompat;
@@ -51,6 +52,9 @@ public class CrimeFragment extends Fragment {
     private CheckBox mSolvedCheckBox;
     private Button mReportButton;
     private Button mSuspectButton;
+    private Button mCallSuspectButtom;
+    private String mSuspectID;
+    private Uri mSuspectContactUri;
 
     public static CrimeFragment newInstance(UUID crimeId){
         Bundle args=new Bundle();
@@ -164,11 +168,25 @@ public class CrimeFragment extends Fragment {
             mSuspectButton.setText(mCrime.getSuspect());
         }
 
+        mCallSuspectButtom=(Button)v.findViewById(R.id.call_suspect);
+        if(mCrime.getSuspect()==null) mCallSuspectButtom.setEnabled(false);
+        mCallSuspectButtom.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent i =new Intent(Intent.ACTION_DIAL);
+                String phoneNumber=getSuspectPhoneNumber();
+                if(phoneNumber!=null) i.setData(Uri.parse("tel:"+phoneNumber));
+                startActivity(i);
+            }
+        });
+
 
         PackageManager packageManager=getActivity().getPackageManager();
         if(packageManager.resolveActivity(pickContact,PackageManager.MATCH_DEFAULT_ONLY)==null){
             mSuspectButton.setEnabled(false);
+            mCallSuspectButtom.setEnabled(false);
         }
+
 
         return v;
     }
@@ -197,11 +215,11 @@ public class CrimeFragment extends Fragment {
             updateTime();
         }
         if(requestCode==REQUEST_CONTACT && data!=null){
-            Uri contactUri=data.getData(); //указатель на контакт который выбрал пользователь
+            mSuspectContactUri=data.getData(); //указатель на контакт который выбрал пользователь
 
-            String[] queryFields=new String[]{ ContactsContract.Contacts.DISPLAY_NAME };
+            String[] queryFields=new String[]{ ContactsContract.Contacts.DISPLAY_NAME, ContactsContract.Contacts._ID};
 
-            Cursor c=getActivity().getContentResolver().query(contactUri,queryFields,null,null,null);
+            Cursor c=getActivity().getContentResolver().query(mSuspectContactUri,queryFields,null,null,null);
             try {
                 if(c.getCount()==0) return;
 
@@ -209,9 +227,14 @@ public class CrimeFragment extends Fragment {
                 String suspect=c.getString(0);
                 mCrime.setSuspect(suspect);
                 mSuspectButton.setText(suspect);
+
+                mSuspectID=c.getString(1);
+                Log.d("suspectID",mSuspectID);
+
             }finally {
                 c.close();
             }
+            getSuspectPhoneNumber();
         }
 
     }
@@ -274,6 +297,25 @@ public class CrimeFragment extends Fragment {
                 mCrime.getTitle(),dateString,solvedString,suspect);
 
         return report;
+    }
+
+    private String getSuspectPhoneNumber(){
+        String phoneNumber;
+        Cursor c=getActivity().getContentResolver().query(
+                Phone.CONTENT_URI,null,
+                Phone.CONTACT_ID+" = "+mSuspectID,null,null);
+        try {
+            if(c.getCount()==0) return null;
+            c.moveToFirst();
+            phoneNumber=c.getString(c.getColumnIndex(Phone.NUMBER));
+
+            Log.d("suspectID",phoneNumber);
+
+        }finally {
+            c.close();
+        }
+
+        return phoneNumber;
     }
 
 }
