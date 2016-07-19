@@ -13,6 +13,7 @@ import com.mh.evgeniy.criminalintent.database.CrimeDbSchema.CrimeTable;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.StringTokenizer;
 import java.util.UUID;
 
 /**
@@ -24,6 +25,7 @@ public class CrimeLab {
     //private ArrayList<Crime> mCrimes;
     private Context mContext;
     private SQLiteDatabase mDatabase;
+
 
 
     private CrimeLab(Context context){
@@ -107,6 +109,7 @@ public class CrimeLab {
         values.put(CrimeTable.Cols.TITLE, crime.getTitle());
         values.put(CrimeTable.Cols.DATE, crime.getDate().getTime());
         values.put(CrimeTable.Cols.SOLVED, crime.isSolved() ? 1 : 0);
+        values.put(CrimeTable.Cols.SUSPECT,crime.getSuspect());
 
         return values;
     }
