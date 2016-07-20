@@ -4,12 +4,16 @@ import android.app.Activity;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
+import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.ContactsContract;
 import android.provider.ContactsContract.CommonDataKinds.Phone;
+import android.provider.MediaStore;
+import android.support.v4.app.DialogFragment;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
+import android.support.v4.app.FragmentTransaction;
 import android.support.v4.app.ShareCompat;
 import android.text.Editable;
 import android.text.TextWatcher;
@@ -25,8 +29,13 @@ import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
 import android.widget.EditText;
+import android.widget.ImageButton;
+import android.widget.ImageView;
 import android.widget.Toast;
 
+import com.mh.evgeniy.criminalintent.database.PictureUtils;
+
+import java.io.File;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
@@ -41,9 +50,11 @@ public class CrimeFragment extends Fragment {
     private static final String DIALOG_DATE = "DialogDate";
     private static final String DIALOG_TIME = "DialogTime";
     private static final String DIALOD_DATE_CODE="DialogDate";
+    private static final String DIALOG_SHOW_PHOTO="DialogPhoto";
     private static final int REQUEST_DATE = 0;
     private static final int REQUEST_TIME = 1;
     private static final int REQUEST_CONTACT=2;
+    private static final int REQUEST_PHOTO=3;
 
     private Crime mCrime;
     private EditText mTitleField;
@@ -55,6 +66,9 @@ public class CrimeFragment extends Fragment {
     private Button mCallSuspectButtom;
     private String mSuspectID;
     private Uri mSuspectContactUri;
+    private ImageButton mPhotoButton;
+    private ImageView mPhotoView;
+    private File mPhotoFile;
 
     public static CrimeFragment newInstance(UUID crimeId){
         Bundle args=new Bundle();
@@ -70,6 +84,7 @@ public class CrimeFragment extends Fragment {
         super.onCreate(savedInstanceBundle);
         UUID crimeId=(UUID) getArguments().getSerializable(ARG_CRIME_ID);
         mCrime=CrimeLab.get(getActivity()).getCrime(crimeId);
+        mPhotoFile=CrimeLab.get(getActivity()).getPhotoFile(mCrime);
 
         setHasOptionsMenu(true);
     }
@@ -187,6 +202,35 @@ public class CrimeFragment extends Fragment {
             mCallSuspectButtom.setEnabled(false);
         }
 
+        mPhotoButton=(ImageButton)v.findViewById(R.id.crime_camera);
+        final Intent captureImage=new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+
+        boolean canTakePhoto=mPhotoFile!=null && captureImage.resolveActivity(packageManager)!=null;
+        mPhotoButton.setEnabled(canTakePhoto);
+
+        if(canTakePhoto){
+            Uri uri=Uri.fromFile(mPhotoFile);
+            captureImage.putExtra(MediaStore.EXTRA_OUTPUT,uri);
+        }
+
+        mPhotoButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                startActivityForResult(captureImage,REQUEST_PHOTO);
+            }
+        });
+
+        mPhotoView=(ImageView)v.findViewById(R.id.crime_photo);
+        updatePhotoView();
+
+        mPhotoView.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                FragmentManager manager=getActivity().getSupportFragmentManager();
+                ShowPhotoDialog dialog=ShowPhotoDialog.newInstance(mPhotoFile.getPath());
+                dialog.show(manager,DIALOG_SHOW_PHOTO);
+            }
+        });
 
         return v;
     }
@@ -236,6 +280,9 @@ public class CrimeFragment extends Fragment {
             }
             getSuspectPhoneNumber();
         }
+        if(requestCode==REQUEST_PHOTO){
+            updatePhotoView();
+        }
 
     }
 
@@ -248,7 +295,7 @@ public class CrimeFragment extends Fragment {
 
     private void updateDate(){
         android.text.format.DateFormat df = new android.text.format.DateFormat();
-        mDateButton.setText(df.format("EEEE, MMMM dd, yyyy",mCrime.getDate()).toString());
+        mDateButton.setText(DateFormat.format("EEEE, MMMM dd, yyyy",mCrime.getDate()).toString());
     }
 
     private void updateTime(){
@@ -317,5 +364,17 @@ public class CrimeFragment extends Fragment {
 
         return phoneNumber;
     }
+
+    private void updatePhotoView(){
+        if(mPhotoFile==null|| !mPhotoFile.exists()){
+            mPhotoView.setImageDrawable(null);
+        }else{
+            Bitmap bitmap= PictureUtils.getScaledBitmap(mPhotoFile.getPath(),getActivity());
+            mPhotoView.setImageBitmap(bitmap);
+        }
+
+
+    }
+
 
 }

@@ -5,12 +5,15 @@ import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
+import android.os.Environment;
+import android.util.Log;
 
 import com.mh.evgeniy.criminalintent.database.CrimeBaseHelper;
 import com.mh.evgeniy.criminalintent.database.CrimeCursorWrapper;
 import com.mh.evgeniy.criminalintent.database.CrimeDbSchema;
 import com.mh.evgeniy.criminalintent.database.CrimeDbSchema.CrimeTable;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.StringTokenizer;
@@ -55,9 +58,6 @@ public class CrimeLab {
     }
 
     public Crime getCrime(UUID id){
-        /*for(Crime crime : mCrimes){
-            if(crime.getId().equals(id)) return crime;
-        }*/
 
         CrimeCursorWrapper cursorWrapper=queryCrimes(CrimeTable.Cols.UUID+" = ?",
                 new String[]{id.toString()});
@@ -126,6 +126,18 @@ public class CrimeLab {
         );
 
         return new CrimeCursorWrapper(cursor);
+    }
+
+    public File getPhotoFile(Crime crime) {
+        File externalFilesDir = mContext
+                .getExternalFilesDir(Environment.DIRECTORY_PICTURES);
+
+        //if(externalFilesDir==null) Log.d("photo","externalFilesDir=null");
+
+        if (externalFilesDir == null) {
+            return null;
+        }
+    return new File(externalFilesDir, crime.getPhotoFilename());
     }
 
 }
