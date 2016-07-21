@@ -1,10 +1,14 @@
 package com.mh.evgeniy.criminalintent;
 
 import android.app.Activity;
+import android.app.AlertDialog;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.Point;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.ContactsContract;
@@ -25,12 +29,15 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.ViewTreeObserver;
+import android.view.Window;
 import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.Toast;
 
 import com.mh.evgeniy.criminalintent.database.PictureUtils;
@@ -69,6 +76,7 @@ public class CrimeFragment extends Fragment {
     private ImageButton mPhotoButton;
     private ImageView mPhotoView;
     private File mPhotoFile;
+    private Point mPhotoViewSize;
 
     public static CrimeFragment newInstance(UUID crimeId){
         Bundle args=new Bundle();
@@ -221,7 +229,19 @@ public class CrimeFragment extends Fragment {
         });
 
         mPhotoView=(ImageView)v.findViewById(R.id.crime_photo);
-        updatePhotoView();
+
+        ViewTreeObserver observer=mPhotoView.getViewTreeObserver();
+        observer.addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
+            @Override
+            public void onGlobalLayout() {
+                boolean isFirstPass=(mPhotoViewSize==null);
+
+                mPhotoViewSize=new Point(mPhotoView.getWidth(),mPhotoView.getHeight());
+                //Log.d("viewSize",mPhotoViewSize.toString());
+                if(isFirstPass) updatePhotoView();
+
+            }
+        });
 
         mPhotoView.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -229,6 +249,7 @@ public class CrimeFragment extends Fragment {
                 FragmentManager manager=getActivity().getSupportFragmentManager();
                 ShowPhotoDialog dialog=ShowPhotoDialog.newInstance(mPhotoFile.getPath());
                 dialog.show(manager,DIALOG_SHOW_PHOTO);
+
             }
         });
 
@@ -369,7 +390,21 @@ public class CrimeFragment extends Fragment {
         if(mPhotoFile==null|| !mPhotoFile.exists()){
             mPhotoView.setImageDrawable(null);
         }else{
-            Bitmap bitmap= PictureUtils.getScaledBitmap(mPhotoFile.getPath(),getActivity());
+            //Bitmap bitmap= PictureUtils.getScaledBitmap(mPhotoFile.getPath(),getActivity());
+
+            /*Bitmap bitmap= (mPhotoViewSize==null) ? PictureUtils.getScaledBitmap(mPhotoFile.getPath(),getActivity())
+                    : PictureUtils.getScaledBitmap(mPhotoFile.getPath(),mPhotoViewSize.x,mPhotoViewSize.y);*/
+
+            Bitmap bitmap;
+
+            if(mPhotoViewSize==null){
+                Log.d("viewSize","getScaledBitmap(mPhotoFile.getPath(),getActivity())");
+                bitmap=PictureUtils.getScaledBitmap(mPhotoFile.getPath(),getActivity());
+            }else {
+                Log.d("viewSize","getScaledBitmap(mPhotoFile.getPath(),mPhotoViewSize.x,mPhotoViewSize.y)");
+                bitmap=PictureUtils.getScaledBitmap(mPhotoFile.getPath(),mPhotoViewSize.x,mPhotoViewSize.y);
+            }
+
             mPhotoView.setImageBitmap(bitmap);
         }
 
